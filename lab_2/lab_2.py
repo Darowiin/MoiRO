@@ -12,22 +12,21 @@ M2 = np.array([0, -1])
 M3 = np.array([2, -1])
 
 # Равные матрицы (задание 1, 2)
-B_eq = np.array([[0.4, 0.0], [0.0, 0.4]])
+B_eq = np.array([[0.7, 0.0], [0.0, 0.7]])
 
 # Неравные матрицы (задание 3)
-B1 = np.array([[0.1, 0.0], [0.0, 0.9]])
-B2 = np.array([[1.0, 0.5], [0.5, 0.3]])
-B3 = np.array([[1.0, -0.5], [-0.5, 0.3]])
+B1 = np.array([[0.5, 0.0], [0.0, 0.2]])
+B2 = np.array([[0.5, 0.25], [0.25, 0.4]])
+B3 = np.array([[0.6, -0.25], [-0.25, 0.3]])
 
 N = 200 # Объем выборки
 
-# Загрузка данных из файлов ЛР №1
 script_dir = os.path.dirname(os.path.abspath(__file__))
 lab1_dir = os.path.join(os.path.dirname(script_dir), 'lab_1')
 
 # Задание 1, 2: данные с равными ковариационными матрицами
-X1_eq = np.load(os.path.join(script_dir, 'distrib_w0_[-1,1].npy'))
-X2_eq = np.load(os.path.join(script_dir, 'distrib_w1_[0,-1].npy'))
+X1_eq = np.load(os.path.join(lab1_dir, 'distrib_1_[-1,1].npy'))
+X2_eq = np.load(os.path.join(lab1_dir, 'distrib_2_[0,-1].npy'))
 
 # Задание 3: данные с неравными ковариационными матрицами
 X1 = np.load(os.path.join(lab1_dir, 'distrib_uneq_1_[-1,1].npy'))
@@ -139,70 +138,3 @@ plt.scatter(X3[:,0], X3[:,1], color='blue', label='Class 3', edgecolor='k', mark
 plt.title('Байесовские границы (Неравные матрицы, квадратичный дискриминант)')
 plt.legend()
 plt.show()
-
-# ==========================================
-# ПУНКТ 4: Бинарные векторы
-# ==========================================
-print("\n--- 4. БИНАРНЫЕ ВЕКТОРЫ ---")
-ya_array = np.array([
-    [0, 0, 0, 1, 1, 1, 1, 1, 0],
-    [0, 0, 1, 0, 0, 0, 0, 1, 0],
-    [0, 1, 0, 0, 0, 0, 0, 1, 0],
-    [0, 1, 0, 0, 0, 0, 0, 1, 0],
-    [0, 0, 1, 0, 0, 0, 0, 1, 0],
-    [0, 0, 0, 1, 1, 1, 1, 1, 0],
-    [0, 0, 0, 0, 1, 0, 0, 1, 0],
-    [0, 0, 0, 1, 0, 0, 0, 1, 0],
-    [0, 0, 1, 0, 0, 0, 0, 1, 0],
-])
-yu_array = np.array([
-    [1, 0, 0, 0, 0, 1, 1, 0, 0],
-    [1, 0, 0, 0, 1, 0, 0, 1, 0],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1],
-    [1, 1, 1, 1, 0, 0, 0, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 1, 0, 0, 1, 0],
-    [1, 0, 0, 0, 0, 1, 1, 0, 0],
-])
-N = 200
-p_err = 0.3 # Вероятность искажения бита
-
-# 1. ВЫТЯГИВАЕМ МАТРИЦЫ В ОДНОМЕРНЫЕ ВЕКТОРЫ (длина 81)
-ya_flat = ya_array.flatten()
-yu_flat = yu_array.flatten()
-
-# 2. СЧИТАЕМ РЕАЛЬНУЮ ДИСТАНЦИЮ ХЭММИНГА 
-# (считаем, сколько именно пикселей отличаются у "Я" и "Ю")
-D_hamming = np.sum(ya_flat != yu_flat)
-
-# Теоретическая ошибка: биномиальное распределение на D_hamming битах
-# Ошибка происходит, если исказилось строго больше половины различающихся битов
-threshold = D_hamming // 2
-P_err_bin_th = 1 - binom.cdf(threshold, D_hamming, p_err)
-# Если D четное, добавляем половину вероятности равенства
-if D_hamming % 2 == 0:
-    P_err_bin_th += 0.5 * binom.pmf(threshold, D_hamming, p_err)
-
-print(f"Бинарные: Дистанция Хэмминга D = {D_hamming}")
-print(f"Бинарные: Теоретическая ошибка = {P_err_bin_th:.4f}")
-
-# Загрузка зашумлённых данных из ЛР №1
-samples_ya = np.load(os.path.join(script_dir, 'sample_ya.npy'))  # (N, 9, 9)
-samples_yu = np.load(os.path.join(script_dir, 'sample_yu.npy'))  # (N, 9, 9)
-bin_X1 = samples_ya.reshape(len(samples_ya), -1)  # (N, 81)
-bin_X2 = samples_yu.reshape(len(samples_yu), -1)  # (N, 81)
-
-# Классификация
-def classify_bin(X, t1, t2):
-    # Кто ближе по Хэммингу (меньше несовпадений), тот и класс
-    dist1 = np.sum(X != t1, axis=1)
-    dist2 = np.sum(X != t2, axis=1)
-    return np.where(dist1 <= dist2, 0, 1)
-
-pred_bin_1 = classify_bin(bin_X1, ya_flat, yu_flat)
-pred_bin_2 = classify_bin(bin_X2, ya_flat, yu_flat)
-
-err_bin_emp = (np.sum(pred_bin_1 != 0) + np.sum(pred_bin_2 != 1)) / (2*N)
-print(f"Бинарные: Эмпирическая ошибка = {err_bin_emp:.4f}")
